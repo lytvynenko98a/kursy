@@ -249,6 +249,11 @@ app.post('/login', (req, res) => {
 
 
 
+const { InferenceClient } = require('@huggingface/inference');
+//const sql = require('mssql');
+
+// Ініціалізація клієнта Hugging Face
+const hf = new InferenceClient(process.env.HF_API_KEY || 'КЛЮЧ ДО API');
 
 // Функція для отримання курсів з БД
 async function getCoursesFromDB() {
