@@ -99,7 +99,7 @@ export default {
   justify-content: center!important;
 }
 .wrapper{
-  max-width: 1350px;
+  max-width: 1300px;
   display: flex;
 }
 .image {

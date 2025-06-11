@@ -53,7 +53,8 @@
 
 <script>
 //import botIcon from '@/assets/bot-icon.png';
-
+import MarkdownIt from 'markdown-it';
+const md = new MarkdownIt({ html: true, linkify: true, typographer: true });
 export default {
   data() {
     return {
@@ -80,9 +81,14 @@ export default {
         });
       }
     },
-    formatMessage(text) {
-      return text.replace(/\n/g, '<br>')
-                .replace(/- (.*?)(<br>|$)/g, '<span class="highlight">$1</span>$2');
+    formatMessage(markdownText) {
+      // 1) декодуємо HTML-сутності, якщо сервер екранує
+      //    (якщо не потрібно — пропустіть цей крок)
+      const decoded = this.decodeHtml
+        ? this.decodeHtml(markdownText)
+        : markdownText;
+      // 2) рендеримо Markdown у HTML
+      return md.render(decoded);
     },
     scrollToBottom() {
       this.$nextTick(() => {

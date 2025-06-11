@@ -78,7 +78,7 @@ import swal from 'sweetalert';
 .feedback-page {
   max-width: 600px;
   margin: 120px auto 0;
-  padding: 40px 500px 70px;
+  padding: 40px 50px 70px;
   background-color: #f2f2f2;
 }
 .page-title {

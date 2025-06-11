@@ -32,7 +32,7 @@
   </script>
   
   <style scoped>
-  .login { max-width: 320px; margin: 6rem auto; display: grid; gap: .8rem; text-align:center; }
+  .login { max-width: 320px; margin: 6rem auto; display: grid; gap: .8rem; text-align:center; margin-top:120px;}
   .err   { color:#c33; }
   </style>
   

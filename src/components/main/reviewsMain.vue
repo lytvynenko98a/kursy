@@ -39,6 +39,9 @@ import axios from 'axios';
 .reviews {
   text-align: center;
   padding: 40px 0;
+  max-width: 1300px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .reviews-title {
   font-size: 28px;

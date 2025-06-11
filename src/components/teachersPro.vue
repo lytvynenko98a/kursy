@@ -7,7 +7,7 @@
           <img :src="teacher.photo" :alt="teacher.name" class="teacher-photo" />
         </div>
         <h2 class="teacher-name">{{ teacher.name }}</h2>
-        <p class="teacher-experience">{{ teacher.experience }}</p>
+        <p class="teacher-experience">Досвід: {{ teacher.experience }} років</p>
         <p class="teacher-teaches">Викладає: {{ teacher.teaches }}</p>
       </div>
     </div>

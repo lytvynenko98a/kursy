@@ -1,7 +1,10 @@
 <template>
+  <button style="margin-top:140px;" @click="downloadICS" class="btn-download">
+      ⬇️ Завантажити розклад (ICS)
+    </button>
     <!-- висота 100vh робить сторінку повноекранною -->
     <vue-cal
-      style="height:70vh;margin-top:120px;"
+      style="height:70vh;"
       default-view="month"
       :time="false"
       locale="uk"
@@ -36,6 +39,16 @@ function goTo(calEvent /*, mouseEvt */) {
   if (!calEvent || !calEvent.id) return;   // захист від «порожнього» кліка
   router.push(`/course/${calEvent.id}`);
 }
+function downloadICS() {
+  // якщо у вас немає proxy
+  window.open('http://localhost:3000/schedule.ics', '_blank')
 
+  // або, якщо використовуєте proxy /api → localhost:3000
+  // window.open('/api/schedule.ics', '_blank')
+}
   </script>
+  <style>
+  .vuecal__flex button{
+    color:black;
+  }</style>
   

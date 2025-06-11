@@ -33,6 +33,33 @@
           #{{ crs.id }} – {{ crs.name }} ({{ crs.start_date }} → {{ crs.end_date }})
         </li>
       </ul>
+
+      <h2>4. Налаштування промокоду</h2>
+      <form @submit.prevent="updatePromo" class="box">
+      <label>Поточний промокод:
+        <strong>{{ promo.code || '— не встановлено —' }}</strong>
+      </label>
+
+      <label for="promoInput">Код промокоду</label>
+      <input
+        id="promoInput"
+        v-model="promoInput"
+        placeholder="Введіть новий код"
+      />
+
+      <label for="discountInput">Знижка (%)</label>
+      <input
+        id="discountInput"
+        type="number"
+        v-model.number="discountInput"
+        min="0"
+        max="100"
+        step="1"
+        placeholder="Наприклад, 25"
+        required
+      />
+      <button>Зберегти промокод</button>
+    </form>
     </div>
   </template>
   
@@ -44,16 +71,51 @@ const API = axios.create({ baseURL: 'http://localhost:3000' });
 
 /* --------- reactive state --------- */
 const courses = ref([]);
-const c = ref({
-  name:'', desc:'', price:0, duration:0, start:'', end:'', file:null // <-- file
+const c = ref({ /* … */ });
+const l = ref({ /* … */ });
+
+const promo = ref({ code: '', discount: 0.25 });
+const promoInput = ref('');
+// тут зберігаємо відсоток (0–100)
+const discountInput = ref(25);
+
+onMounted(async () => {
+  await loadCourses();
+  await loadPromo();
 });
-const l = ref({ courseId:null, title:'', order:1 });
 
-onMounted(loadCourses);
-
-async function loadCourses(){
+/* --------- завантажити курси --------- */
+async function loadCourses() {
   const { data } = await API.get('/courses');
   courses.value = data;
+}
+
+/* --------- завантажити промокод --------- */
+async function loadPromo() {
+  try {
+    const { data } = await API.get('/promo');
+    promo.value = data;
+    promoInput.value = data.code;
+    discountInput.value = Math.round(data.discount * 100);
+  } catch (e) {
+    console.error('Помилка при GET /promo:', e);
+  }
+}
+
+/* --------- оновити промокод --------- */
+async function updatePromo() {
+  try {
+    const payload = {
+      code: promoInput.value,
+      discount: discountInput.value / 100
+    };
+    const { data } = await API.post('/promo', payload);
+    promo.value = data;
+    alert(`Збережено: код=${data.code}, знижка=${Math.round(data.discount*100)}%`);
+  } catch (e) {
+    console.error('Помилка при POST /promo:', e);
+    alert('Не вдалося зберегти промокод');
+  }
 }
 
 /* ---------------- файл обрано ---------------- */
@@ -88,8 +150,7 @@ async function addLesson(){
   });
   Object.assign(l.value,{ courseId:null, title:'', order:1 });
   alert('Урок додано');
-}
-</script>
+}</script>
   
   <style scoped>
   .admin { max-width: 520px; margin: auto; font-family: sans-serif; }

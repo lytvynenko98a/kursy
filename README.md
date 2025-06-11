@@ -1,24 +1,21 @@
-# course_proj
+# Додаток для компанії з проведення курсів програмування
 
-## Project setup
+## Налаштування проєкту
 ```
 npm install
 ```
 
-### Compiles and hot-reloads for development
+### Компіляція фронт-енду
 ```
 npm run serve
 ```
 
-### Compiles and minifies for production
+### Компіляція бек-енду
 ```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
+node app.js
 ```
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+### З'єднання з базою даних
+```
+З'єднання з базою даних налаштовується у файлі app.js.
+```

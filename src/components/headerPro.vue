@@ -1,8 +1,8 @@
 <template>
-  <header class="header">
+  <header class="header" >
   <div class="wrapper">
     <div class="logo"><img src="https://images.vexels.com/media/users/3/224169/isolated/preview/dbfe1f493ad01117fa4ec5ba10150e4d-computer-programming-logo.png" alt=""></div>
-    <nav class="nav">
+    <nav class="nav" style="position:relative;box-shadow:none;">
       <ul>
         <li><a href="/#">Головна</a></li>
         <li><a href="/teachers">Наші викладачі</a></li>
@@ -12,9 +12,7 @@
         <li><a href="/form">Форма зв'язку</a></li>
       </ul>
     </nav>
-    <div class="start-learning">
-      <a href="/form" class="start-button">Почни навчання</a>
-    </div>
+    
   </div>
   </header>
 </template>
@@ -37,7 +35,8 @@ export default {
   padding: 20px;
   background-color: white; 
   color: #fff;
-  z-index: 1000; 
+  z-index: 1000;
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px; 
 }
 header .wrapper{
   display: flex;

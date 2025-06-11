@@ -23,11 +23,16 @@ export default {
 </script>
 
 <style>
+@import "../node_modules/picnic/picnic.min.css";
 body {
   margin: 0;
+  font-size: 1.0em;
 }
 #app {
   margin: 0 auto;
 }
-
+*{
+  font-family: Montserrat;
+  font-weight: 400;
+}
 </style>

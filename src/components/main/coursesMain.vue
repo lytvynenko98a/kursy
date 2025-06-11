@@ -57,6 +57,7 @@ import axios from 'axios';
   gap: 20px;
 }
 .course-card {
+  cursor: pointer;
   border: 1px solid #ddd;
   border-radius: 10px;
   text-align: left;

@@ -1,9 +1,14 @@
+const { randomUUID } = require('crypto');
+global.crypto = { randomUUID };
+
 const sql = require('mssql');
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const path   = require('path');
 const fs     = require('fs');
+const ical    = require('ical-generator').default;
+const { getVtimezoneComponent } = require('@touch4it/ical-timezones');
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -73,6 +78,101 @@ app.get('/schedule', (req, res) => {
     });
   });
 });
+
+// Експорт календаря у форматі ICS
+app.get('/schedule.ics', (req, res) => {
+  sql.connect(config, err => {
+    if (err) return res.status(500).send('DB error');
+
+    new sql.Request().query(`
+      SELECT id, name, start_date AS startDate, end_date AS endDate
+      FROM Courses
+    `, (err, { recordset }) => {
+      if (err) return res.status(500).send('Query error');
+
+      // 1) Ініціалізуємо календар
+      const cal = ical({
+        name:   'Мій розклад курсів',
+        prodId: { company: 'MyApp', product: 'Courses', language: 'EN' }
+      });
+
+      // 2) Додаємо VTIMEZONE-блок для Europe/Kiev
+      const tzid = 'Europe/Kiev';  // саме так, бо Google чекає Kiev, а не Kyiv
+      cal.timezone({
+        name: tzid,
+        generator: getVtimezoneComponent
+      });
+
+      // 3) Створюємо події з цим самим TZID
+      recordset.forEach(ev => {
+        cal.createEvent({
+          //id:      ev.id.toString(),
+          summary: ev.name,
+          start:   new Date(ev.startDate),
+          end:     new Date(ev.endDate),
+          timezone: tzid
+        });
+      });
+
+      // 4) Віддаємо як .ics
+      res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+      res.setHeader('Content-Disposition',
+                    'attachment; filename="schedule.ics"');
+      res.send(cal.toString());
+    });
+  });
+});
+
+
+//промокод
+// після всіх require(...) зверху файлу
+const promoFile = path.join(__dirname, 'promo.json');
+
+// Якщо немає — створюємо з дефолтною 25%-знижкою
+if (!fs.existsSync(promoFile)) {
+  fs.writeFileSync(
+    promoFile,
+    JSON.stringify({ code: '', discount: 0.25 }, null, 2),
+    'utf-8'
+  );
+}
+
+// GET /promo — повернути current code + discount
+app.get('/promo', (req, res) => {
+  try {
+    const promo = JSON.parse(fs.readFileSync(promoFile, 'utf-8'));
+    res.json(promo);
+  } catch (e) {
+    console.error('Promo read error:', e);
+    res.status(500).json({ error: 'Cannot read promo config' });
+  }
+});
+
+// POST /promo — оновити code і discount
+app.post('/promo', (req, res) => {
+  const { code, discount } = req.body;
+
+  if (typeof code !== 'string' || typeof discount !== 'number') {
+    return res
+      .status(400)
+      .json({ error: 'Require: { code: string, discount: number }' });
+  }
+  if (discount < 0 || discount > 1) {
+    return res
+      .status(400)
+      .json({ error: 'Discount must be between 0 and 1 (e.g. 0.25)' });
+  }
+
+  const promo = { code, discount };
+  try {
+    fs.writeFileSync(promoFile, JSON.stringify(promo, null, 2), 'utf-8');
+    res.json(promo);
+  } catch (e) {
+    console.error('Promo write error:', e);
+    res.status(500).json({ error: 'Cannot write promo config' });
+  }
+});
+
 
 app.get('/:table', (req, res) => {
   const tableName = req.params.table;
@@ -249,11 +349,16 @@ app.post('/login', (req, res) => {
 
 
 
+
+
+
+
+
 const { InferenceClient } = require('@huggingface/inference');
 //const sql = require('mssql');
 
 // Ініціалізація клієнта Hugging Face
-const hf = new InferenceClient(process.env.HF_API_KEY || 'КЛЮЧ ДО API');
+const hf = new InferenceClient(process.env.HF_API_KEY || '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');
 
 // Функція для отримання курсів з БД
 async function getCoursesFromDB() {
