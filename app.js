@@ -9,6 +9,10 @@ const path   = require('path');
 const fs     = require('fs');
 const ical    = require('ical-generator').default;
 const { getVtimezoneComponent } = require('@touch4it/ical-timezones');
+
+require('dotenv').config();
+const nodemailer = require('nodemailer');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -24,6 +28,16 @@ const config = {
     trustServerCertificate: true   // потрібне для локального self-signed
   }
 };
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
 
 const UPLOAD_DIR = path.join(__dirname, 'public', 'courses');
@@ -125,7 +139,6 @@ app.get('/schedule.ics', (req, res) => {
 
 
 //промокод
-// після всіх require(...) зверху файлу
 const promoFile = path.join(__dirname, 'promo.json');
 
 // Якщо немає — створюємо з дефолтною 25%-знижкою
@@ -274,10 +287,98 @@ function insertFeedback(name, email, message) {
 app.post('/feedback', (req, res) => {
   const { name, email, message } = req.body;
   insertFeedback(name, email, message);
+
+  // --- відправка листа адміну ---
+  transporter.sendMail({
+    from: `"Courses App" <${process.env.SMTP_USER}>`,
+    to:   process.env.ADMIN_EMAIL,
+    subject: 'Новий відгук від ' + name,
+    text: `
+Нове повідомлення з форми зворотного зв'язку:
+
+Ім'я: ${name}
+Email: ${email}
+
+Повідомлення:
+${message}
+    `.trim()
+  }, (err, info) => {
+    if (err) console.error('Mail error:', err);
+    else    console.log('Feedback mail sent:', info.response);
+  });
+
   res.status(200).send('Feedback received successfully.');
 });
+
+app.post('/enroll', async (req, res) => {
+  const { name, email, courses: courseIds, promo } = req.body;
+
+  // 1) Приводимо IDs до чисел
+  const ids = (courseIds || []).map(id => Number(id)).filter(Boolean);
+  if (!ids.length) return res.status(400).json({ error: 'No courses selected' });
+
+  try {
+    // 2) Забираємо з БД назви й ціни
+    await sql.connect(config);
+    const result = await sql.query(`
+      SELECT id, name, price
+      FROM Courses
+      WHERE id IN (${ids.join(',')})
+    `);
+    const chosen = result.recordset;
+
+    // 3) Завантажуємо актуальний промо з файлу
+    const { code: serverCode, discount } = JSON.parse(
+      fs.readFileSync(promoFile, 'utf-8')
+    );
+
+    const validPromo = promo?.trim().toLowerCase() === serverCode.toLowerCase();
+    let total = 0;
+
+    // 4) Формуємо текст листа
+    let lines = chosen.map(c => {
+      const price = parseFloat(c.price);
+      const final  = validPromo ? price * (1 - discount) : price;
+      total += final;
+      return `• ${c.name}: ${final.toFixed(2)} грн`;
+    });
+
+    const mailText = `
+Нова реєстрація на курси:
+
+Ім'я: ${name}
+Email: ${email}
+
+Курси:
+${lines.join('\n')}
+
+${validPromo
+  ? `Промокод "${promo}" застосовано: знижка ${(discount*100).toFixed(0)}%`
+  : promo
+    ? `Невірний промокод: "${promo}". Знижка не застосована.`
+    : 'Промокод не введено.'
+}
+
+Загальна сума: ${total.toFixed(2)} грн
+    `.trim();
+
+    // 5) Відправляємо лист адміну
+    await transporter.sendMail({
+      from: `"Courses App" <${process.env.SMTP_USER}>`,
+      to:   process.env.ADMIN_EMAIL,
+      subject: `Нова реєстрація від ${name}`,
+      text: mailText
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Enroll error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 app.post('/courses', upload.single('image'), (req, res) => {
-  // eslint-disable-next-line camelcase
   const { name, description, price, duration, startDate, endDate } = req.body;
   const imagePath = req.file ? `/courses/${req.file.filename}` : null;
 
@@ -369,7 +470,7 @@ async function getCoursesFromDB() {
 
 // Генерація контексту для моделі
 function generateContext(courses) {
-  return `Ти - асистент для підбору курсів. Доступні курси:\n${
+  return `Ти - асистент для підбору курсів. Пиши коротко. Доступні курси:\n${
     courses.map(c => `- ${c.name}: ${c.description.substring(0, 100)}...`).join('\n')
   }`;
 }

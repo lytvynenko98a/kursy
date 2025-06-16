@@ -10,7 +10,7 @@
           <div class="start-learning">
             <!-- замінили <a> на кнопку, щоб відкривати модалку -->
             <button class="start-button" @click.prevent="openModal">
-              Почни навчання
+              Почати навчання
             </button>
           </div>
         </div>
@@ -168,9 +168,13 @@ export default {
         promo: this.promoCode,
       };
       console.log('Відправляємо на сервер:', payload);
-      // axios.post('http://localhost:3000/enroll', payload)
-      //   .then(() => { /* показати успіх */ })
-      //   .catch(() => { /* обробити помилку */ });
+      axios.post('http://localhost:3000/enroll', payload)
+        .then(() => {
+          alert('Дякуємо! Ваші дані надіслано, чекайте підтвердження по email.');
+        })
+        .catch(() => {
+          alert('Помилка надсилання. Спробуйте пізніше.');
+        });
       this.closeModal();
       alert('Дякуємо! Ваші дані надіслано.');
     },
